@@ -14,9 +14,9 @@ export class AuthService {
         this.account = new Account(this.client);
     }
 
-    async createAccount({userEmail, userPassword}){
+    async createAccount({userFullName, userEmail, userPassword}){
         try {
-            return await this.account.create( ID.unique(), userEmail, userPassword, '0');
+            return await this.account.create( ID.unique(), userEmail, userPassword, userFullName);
         } 
         catch (error) {
             console.log("Appwrite service :: createAccount :: error", error);
@@ -30,16 +30,6 @@ export class AuthService {
         } 
         catch (error) {
             console.log("Appwrite service :: userLogin :: error", error);
-            throw error;
-        }
-    }
-
-    async updateBalance(wallet_balance){
-        try {
-            await this.account.updateName(wallet_balance);
-            return true;
-        } catch (error) {
-            console.log("Appwrite service :: updateBalance (FAKE) :: error", error);
             throw error;
         }
     }
@@ -64,6 +54,22 @@ export class AuthService {
         }
 
         return null;
+    }
+
+    async verifyEmail({userId, secret}){
+        try {
+            return await this.account.updateVerification(userId, secret);
+        } catch (error) {
+            console.log("Appwrite service :: verifyEmail :: error")
+        }
+    }
+
+    async createEmailVerify(){
+        try {
+            return await this.account.createVerification('http://localhost:5173/signup');
+        } catch (error) {
+            console.log("Appwrite service :: create verify Email :: error");
+        }
     }
 
 }

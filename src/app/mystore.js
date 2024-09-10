@@ -7,14 +7,14 @@ const authStore = (set) => ({
     user : null,
 
     userLogin : (user) => {
-        set((state) => ({
+        set(() => ({
             authStatus : true,
-            user
+            user : user
         })) 
     },
 
     userLogout : () => {
-        set((state) => ({
+        set(() => ({
             authStatus : false,
             user : null
         }))
