@@ -1,4 +1,5 @@
 import React, {useState} from 'react'
+import { ID } from 'appwrite';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -20,29 +21,61 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import useAuthStore from '@/app/mystore';
+import user from '@/appwrite/users';
+import transactions from '@/appwrite/transactions';
+import { useNavigate } from 'react-router-dom';
 
 function NewTransaction() {
 
   const [error, setError] = useState("");
   const [amount, setAmount] = useState('');
-  const [transaction_message, setMessage] = useState('');
-  const [transaction_mode, setTransactionMode] = useState('');
-  const [transaction_category, setTransactionCategory] = useState('');
+  const [message, setMessage] = useState('');
+  const [mode, setTransactionMode] = useState('');
+  const [category, setTransactionCategory] = useState('');
   const [isRecurring, setIsRecurring] = useState('');
-  const [date, setDate] = useState(); 
-  
+  let [date, setDate] = useState();
+  const userId = useAuthStore((state) => state.user?.$id);
+  const navigate = useNavigate();
 
-  const handleNewPayment = async () => {
+  const handleNewPayment =  async (e) => {
+    e.preventDefault();
     setError('');
 
     if(
-      [amount, transaction_category, transaction_mode].some((field) => field?.trim()==='')
+      [amount, category, mode].some((field) => field?.trim() === '')
     ){
-      setError(`!! Please Enter all the valid Fields !!`);
+      setError(`!! Please Enter all the valid fields !!`);
       return;
     }
 
+    if(category==='Wallet-Deposit' || category==='Refund') setIsRecurring('');
 
+    const amountPattern = /^\d+(\.\d{1,2})?$/;
+    if (!amountPattern.test(amount)) {
+      setError('Please enter a valid amount with upto 2 decimal only');
+      return;
+    }
+
+    if(typeof date === 'undefined') date = new Date();
+    const newDate  = date.toISOString();
+    const newAmount = parseFloat(amount);
+
+    try {
+      const myUser = await user.getUser(userId);
+      let remaining_balance = myUser.balance;
+      if(category === 'Wallet-Deposit' || category === 'Refund') remaining_balance += newAmount;
+      else remaining_balance -= newAmount; 
+  
+      await transactions.addTransaction({userId, date : newDate, amount : newAmount, mode, category, isRecurring, message, remaining_balance})
+      await user.updateBalance({userId, newBalance : remaining_balance});  
+
+      navigate('/');
+      
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      setError('An error occurred while updating the transaction. Please try again.');
+    }
   }
 
   return (
@@ -51,12 +84,11 @@ function NewTransaction() {
         <h2 className="text-xl text-center font-semibold text-gray-900 dark:text-white sm:text-2xl">New Payment</h2>
 
         <div className="my-6 sm:mt-8 lg:flex lg:items-start lg:gap-12">
-          {error && <p className="text-red-600 text-center">{error}</p>}
-
           <form 
           onSubmit={handleNewPayment}
           className="mx-auto w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6 lg:p-8"
           >
+            {error && <p className="text-red-600 text-center">{error}</p>}
             <div className="mb-6 grid grid-cols-2 gap-3">
 
               <div className="col-span-2 grid w-full items-center gap-1.5">
@@ -68,8 +100,7 @@ function NewTransaction() {
               </div>
 
               <div className='col-span-2 grid grid-cols-1 md:grid-cols-2 items-center gap-1.5'>
-                <div className='col-span-1' id='transaction_category'>
-
+                <div className='col-span-1' id='category'>
                   <Select
                   onValueChange={(value) => setTransactionCategory(value)}
                   required
@@ -94,8 +125,7 @@ function NewTransaction() {
                   </Select>
                 </div>
 
-                <div className='col-span-1' id='transaction_mode'>
-            
+                <div className='col-span-1' id='mode'>
                   <Select
                   onValueChange={(value) => setTransactionMode(value)}
                   required
@@ -137,6 +167,7 @@ function NewTransaction() {
                       mode="single"
                       selected={date}
                       onSelect={setDate}
+                      showOutsideDays={false}
                       initialFocus
                     />
                   </PopoverContent>
@@ -144,7 +175,7 @@ function NewTransaction() {
               </div>
 
               {
-                !(transaction_category?.trim()==='' || transaction_category==='Wallet-Deposit' ||transaction_category==='Refund') && (
+                !(category?.trim()==='' || category==='Wallet-Deposit' ||category==='Refund') && (
                   <div className='col-span-2'>
                     <Select
                     onValueChange={(value) => setIsRecurring(value)}
@@ -164,12 +195,12 @@ function NewTransaction() {
                 )
               }
 
-              <div className='col-span-2' id="transaction_message" >
+              <div className='col-span-2' id="message" >
 
-                <label htmlFor="transaction_message" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> Transaction Message (optional) </label>
+                <label htmlFor="message" className="mb-2 block text-sm font-medium text-gray-900 dark:text-white"> Transaction Message (optional) </label>
 
                 <Input 
-                value={transaction_message}
+                value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 type="text" 
                 placeholder="Flight : VNS - TIR"
