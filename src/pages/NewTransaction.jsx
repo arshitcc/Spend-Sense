@@ -33,7 +33,7 @@ function NewTransaction() {
   const [message, setMessage] = useState('');
   const [mode, setTransactionMode] = useState('');
   const [category, setTransactionCategory] = useState('');
-  const [isRecurring, setIsRecurring] = useState('');
+  let [isRecurring, setIsRecurring] = useState('');
   let [date, setDate] = useState();
   const userId = useAuthStore((state) => state.user?.$id);
   const navigate = useNavigate();
@@ -49,7 +49,7 @@ function NewTransaction() {
       return;
     }
 
-    if(category==='Wallet-Deposit' || category==='Refund') setIsRecurring('');
+    if(category==='Wallet-Deposit' || category==='Refund') isRecurring = `''`;
 
     const amountPattern = /^\d+(\.\d{1,2})?$/;
     if (!amountPattern.test(amount)) {
