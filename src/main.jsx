@@ -8,7 +8,12 @@ import Login from './pages/Login.jsx'
 import Contact from './pages/Contact.jsx'
 import Signup from './pages/Signup.jsx'
 import NewTransaction from './pages/NewTransaction.jsx'
+import TransactionsList from './pages/TransactionsList.jsx'
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import 'non.geist'
+
+
+const queryClient = new QueryClient();
 
 const myRouter = createBrowserRouter([
   {
@@ -35,12 +40,18 @@ const myRouter = createBrowserRouter([
         path : '/add',
         element : <NewTransaction/>
       },
+      {
+        path : '/transactions',
+        element : <TransactionsList/>
+      }
     ]
   }
 ])
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={myRouter}/>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={myRouter}/>
+    </QueryClientProvider>
   </StrictMode>,
 )

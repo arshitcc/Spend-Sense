@@ -25,6 +25,7 @@ import useAuthStore from '@/app/mystore';
 import user from '@/appwrite/users';
 import transactions from '@/appwrite/transactions';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 
 function NewTransaction() {
 
@@ -38,10 +39,8 @@ function NewTransaction() {
   const userId = useAuthStore((state) => state.user?.$id);
   const navigate = useNavigate();
 
-  const handleNewPayment =  async (e) => {
-    e.preventDefault();
+  const handleNewPayment =  async () => {
     setError('');
-
     if(
       [amount, category, mode].some((field) => field?.trim() === '')
     ){
@@ -78,6 +77,24 @@ function NewTransaction() {
     }
   }
 
+  const queryClient = useQueryClient();
+
+  const paymentMutation = useMutation({
+    mutationFn : handleNewPayment,
+    onSuccess: () => {
+      console.log("Payment Added - Successfully");
+      queryClient.invalidateQueries(['transactions'])
+    },
+    onError: (error) => {
+      console.error("Payment Failed:", error);
+    },
+  });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    paymentMutation.mutate();
+  }
+
   return (
     <>
       <div className="mx-auto max-w-screen-sm my-12 p-2">
@@ -85,7 +102,7 @@ function NewTransaction() {
 
         <div className="my-6 sm:mt-8 lg:flex lg:items-start lg:gap-12">
           <form 
-          onSubmit={handleNewPayment}
+          onSubmit={handleSubmit}
           className="mx-auto w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-6 lg:p-8"
           >
             {error && <p className="text-red-600 text-center">{error}</p>}
@@ -113,6 +130,8 @@ function NewTransaction() {
                         <SelectLabel className='underline font-bold'> Expense</SelectLabel>
                         <SelectItem value="Food">Food</SelectItem>
                         <SelectItem value="Travel">Travel</SelectItem>
+                        <SelectItem value="Entertainment">Entertainment</SelectItem>
+                        <SelectItem value="Bills">Bills</SelectItem>
                         <SelectItem value="Online Shopping">Online Shopping</SelectItem>
                         <SelectItem value="Others">Others</SelectItem>
                       </SelectGroup>

@@ -38,14 +38,16 @@ export class Transactions{
         }
     }
 
-    async viewTransactions(userId){
+    async viewTransactions(userId, {queries}){
 
         try {
             return await this.databases.listDocuments(
                 config.appwriteDatabaseId,
                 config.appwriteTransactionsCollectionId,
                 [
-                    Query.equal('userId',userId)
+                    Query.equal('userId', userId),
+                    Query.limit(queries?.limit || 10),
+                    Query.offset(queries?.offset || 0), 
                 ]
             )
         } catch (error) {
