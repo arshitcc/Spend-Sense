@@ -111,6 +111,35 @@ export class User {
             throw error;
         }
     }
+
+    async updateSalary({userId, newSalary}){
+        try {
+            await this.databases.updateDocument(
+                config.appwriteDatabaseId,
+                config.appwriteUsersCollectionId,
+                userId,
+                { salary : newSalary }
+            )
+        } catch (error) {
+            console.error("Error updating Salary: ", error);
+            throw error;
+        }
+    }
+
+    async updateExpenses({userId, newExpenses}){
+        try {
+            await this.databases.updateDocument(
+                config.appwriteDatabaseId,
+                config.appwriteUsersCollectionId,
+                userId,
+                { expenses : newExpenses }
+            )
+        } catch (error) {
+            console.error("Error updating Expenses: ", error);
+            throw error;
+        }
+    }
+
 }
 
 const user = new User();

@@ -38,7 +38,7 @@ export class Transactions{
         }
     }
 
-    async viewTransactions(userId, {queries}){
+    async viewRangedTransactions(userId, queries){
 
         try {
             return await this.databases.listDocuments(
@@ -46,12 +46,43 @@ export class Transactions{
                 config.appwriteTransactionsCollectionId,
                 [
                     Query.equal('userId', userId),
-                    Query.limit(queries?.limit || 10),
-                    Query.offset(queries?.offset || 0), 
+                    Query.greaterThanEqual('date',queries.start),
+                    Query.lessThanEqual('date', queries.end), 
                 ]
             )
         } catch (error) {
             console.log('Appwrite Error : viewTransactions : ', error);
+        }
+    }
+
+    async viewRecentTransactions(userId){
+        try {
+            return await this.databases.listDocuments(
+                config.appwriteDatabaseId,
+                config.appwriteTransactionsCollectionId,
+                [
+                    Query.equal('userId', userId),
+                    Query.orderDesc('date'),
+                    Query.limit(5),
+                ]
+            )
+        } catch (error) {
+            console.log('Appwrite Error : viewRecentTransactions : ', error);
+        }
+    }
+
+    async viewTransactions(userId, queries){
+        try {
+            return await this.databases.listDocuments(
+                config.appwriteDatabaseId,
+                config.appwriteTransactionsCollectionId,
+                [
+                    Query.equal('userId',userId),
+                    Query.orderDesc('date'),
+                ]
+            )
+        } catch (error) {
+            console.log('Appwrite Error : viewTransactions : ', error);    
         }
     }
 

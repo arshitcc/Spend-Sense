@@ -1,7 +1,5 @@
 "use client"
 
-import * as React from "react"
-import { TrendingUp } from "lucide-react"
 import { Label, Pie, PieChart } from "recharts"
 
 import {
@@ -20,49 +18,50 @@ import {
 
 export const description = "A donut chart with text"
 
-const chartData = [
-  { browser: "chrome", visitors: 275, fill: "var(--color-chrome)" },
-  { browser: "safari", visitors: 200, fill: "var(--color-safari)" },
-  { browser: "firefox", visitors: 287, fill: "var(--color-firefox)" },
-  { browser: "edge", visitors: 173, fill: "var(--color-edge)" },
-  { browser: "other", visitors: 190, fill: "var(--color-other)" },
-]
+const calculateChartData = (transactionsData) => {
+  const modeMap = {};
 
-const chartConfig = {
-  visitors: {
-    label: "Visitors",
-  },
-  chrome: {
-    label: "Chrome",
-    color: "hsl(var(--chart-1))",
-  },
-  safari: {
-    label: "Safari",
-    color: "hsl(var(--chart-2))",
-  },
-  firefox: {
-    label: "Firefox",
-    color: "hsl(var(--chart-3))",
-  },
-  edge: {
-    label: "Edge",
-    color: "hsl(var(--chart-4))",
-  },
-  other: {
-    label: "Other",
-    color: "hsl(var(--chart-5))",
-  },
-}
+  transactionsData.forEach((transaction) => {
+    const { mode, amount, category } = transaction;
+    if (!modeMap[mode]) modeMap[mode] = 0;    
+    if(category!=='Wallet-Deposit' && category!=='Refund') modeMap[mode] += amount;
+  });
 
-export function ExpensePieChart() {
-  const totalVisitors = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.visitors, 0)
-  }, [])
+  const chartData = Object.keys(modeMap).map(mode => ({
+    mode,
+    amount: modeMap[mode],
+    fill: `var(--color--${mode.toLowerCase()},#61a8fa)`
+  }));
 
+  return chartData;
+};
+
+const createChartConfig = (chartData) => {
+  const chartConfig = {};
+
+  chartData.forEach(({ mode }, index) => {
+    chartConfig[mode.toLowerCase()] = {
+      label: mode,
+      color: `hsl(var(--chart-${index + 1}))`,
+    };
+  });
+
+  return chartConfig;
+};
+
+export function ExpensePieChart({isLoading, isError, transactionsData}) {  
+
+  const chartData = transactionsData ? calculateChartData(transactionsData) : [];
+  const chartConfig = createChartConfig(chartData);
+  const totalAmount = chartData.reduce((acc, curr) => acc + curr.amount, 0);
+
+  if(isLoading) return <div>Loading...</div>
+  if(isError) return <div>Error in Loading Transactions ...</div>
+  
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Pie Chart - Donut with Text</CardTitle>
+        <CardTitle>Payment-Mode Analysis</CardTitle>
         <CardDescription>January - June 2024</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
@@ -77,9 +76,9 @@ export function ExpensePieChart() {
             />
             <Pie
               data={chartData}
-              dataKey="visitors"
-              nameKey="browser"
-              innerRadius={60}
+              dataKey="amount"
+              nameKey="mode"
+              innerRadius={90}
               strokeWidth={5}
             >
               <Label
@@ -97,14 +96,14 @@ export function ExpensePieChart() {
                           y={viewBox.cy}
                           className="fill-foreground text-3xl font-bold"
                         >
-                          {totalVisitors.toLocaleString()}
+                          {totalAmount.toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Visitors
+                          Amount
                         </tspan>
                       </text>
                     )

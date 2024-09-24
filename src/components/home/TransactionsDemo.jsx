@@ -1,70 +1,79 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import transactions from '@/appwrite/transactions'; // Assumes this module exports your API call
-import useAuthStore from '@/app/mystore'; // Redux or state management
 import {Button} from '@/components/ui/button'
 import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import useAuthStore from '@/app/mystore';
+import { useQuery } from '@tanstack/react-query';
+import transactions from '@/appwrite/transactions';
 
 function TransactionsDemo() {
-  const user = useAuthStore((state) => state.user);
-
-  const fetchTransactions = async () => {
-    if (!user?.$id) {
-      throw new Error('User ID is not available');
-    }
-    const payments = await transactions.viewTransactions(user.$id, {
-      limit: 10,
-    });
-    return payments.documents;
-  };
-
-  const {
-    data: transactionsData, 
-    isLoading,
-    isError,
-    error,
-  } = useQuery({
-    queryKey: ['transactions', user?.$id], 
-    queryFn: fetchTransactions,            
-    enabled: !!user?.$id,  
-    staleTime : 1000*10                
-  });
   
+  const myUser = useAuthStore((state) => state.user);
+
+  const fetchRecentTransactions = async () => {
+    try {
+      if (!myUser?.$id) {
+        throw new Error('User ID is not available');
+      }
+
+      const payments = await transactions.viewRecentTransactions(myUser?.$id);
+      return payments.documents;
+    } 
+    catch (error) {
+      console.error("Error fetching transactions:", error);
+    }
+  }
+  const {data : recentTransactions, isLoading, isError, error} = useQuery({
+    queryKey: ['recentTransactions', myUser?.$id],
+    queryFn: fetchRecentTransactions,
+    enabled: !!myUser?.$id,
+    staleTime: 1000 * 100,
+  })
+
   if (isLoading) {
     return <div>Loading transactions...</div>;
   }
 
   if (isError) {
-    console.error('Error fetching transactions:', error);
+    console.error('Error fetching transactions:', isError);
     return <div>Error loading transactions</div>;
   }
 
   return (
     <>
-      <section className="bg-white py-8 antialiased dark:bg-gray-900 md:py-16">
-        <div className="mx-auto max-w-screen-2xl px-4 2xl:px-0">
+      <section className="bg-white w-full antialiased dark:bg-gray-900 rounded-xl">
+        <div className="mx-auto max-w-screen-2xl p-2">
           <div className="mx-auto max-w-screen-xl">
-            <div className="gap-4 sm:flex sm:items-center sm:justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white sm:text-2xl">
-                My Transactions
-              </h2>
-
-            </div>
-
-            <div className="mt-6 flow-root sm:mt-8">
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {transactionsData?.map((transaction) => (
-                  <div key={transaction?.transaction_id} className="w-full">
-                    <div>Transaction: {transaction.amount}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <Button>
-              <Link to={'/transactions'}>
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">DATE</TableHead>
+                    <TableHead className="text-right">AMOUNT</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentTransactions?.map((transaction) => (
+                    <TableRow className="w-full text-md md:text-lg" key={transaction.$id}>
+                      <TableCell className="text-left w-1/2 px-1">{transaction.date.substring(0, 10)}</TableCell>
+                      <TableCell className={`text-right w-1/2 px-1 ${(transaction.category!=="Wallet-Deposit" && transaction.category!=="Refund" )? 'text-red-600' : 'text-green-600'}`}>
+                      {(transaction.category!=="Wallet-Deposit" && transaction.category!=="Refund" )? "-": "+"}₹{transaction.amount.toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <Button className="mt-2">
+            <Link to={'/transactions'}>
               Show More
-              </Link>
-            </Button>
+            </Link>
+          </Button>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 "use client"
 
 import { Bar, BarChart, CartesianGrid, LabelList, XAxis } from "recharts"
+import CustomXAxis from "./CustomAxis"
 
 import {
   Card,
@@ -18,28 +19,48 @@ import {
 
 export const description = "A bar chart with a label"
 
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-]
+const calculateChartData = (transactionsData) => {
+  const categoryMap = {};
 
-const chartConfig = {
-  desktop: {
-    label: "Desktop",
-    color: "hsl(var(--chart-1))",
-  },
-}
+  transactionsData.forEach((transaction) => {
+    const { category, amount } = transaction;
+    if (!categoryMap[category] && category!=="Wallet-Deposit" && category!=="Refund") categoryMap[category] = 0;    
+    if(category!=="Wallet-Deposit" && category!=="Refund") categoryMap[category] += amount;
+  });
 
-export function ExpenseBarChart() {
+  const chartData = Object.keys(categoryMap).map((category) => ({
+    category,
+    amount: categoryMap[category],
+  }));
+
+  return chartData;
+};
+
+const createChartConfig = (chartData) => {
+  const chartConfig = {};
+
+  chartData.forEach(({ category }, index) => {
+    chartConfig[category.toLowerCase()] = {
+      label: category,
+      color: `hsl(var(--chart-${index + 1}))`,
+    };
+  });  
+
+  return chartConfig;
+};
+
+export function ExpenseBarChart({isLoading, isError, transactionsData}) {
+
+  const chartData = transactionsData ? calculateChartData(transactionsData) : [];
+  const chartConfig = createChartConfig(chartData);
+
+  if(isLoading) return <div>Loading...</div>
+  if(isError) return <div>Error in Loading Transactions ...</div>
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bar Chart - Label</CardTitle>
+        <CardTitle>Payment-Category Analysis</CardTitle>
         <CardDescription>January - June 2024</CardDescription>
       </CardHeader>
       <CardContent>
@@ -54,18 +75,18 @@ export function ExpenseBarChart() {
             }}
           >
             <CartesianGrid vertical={false} />
-            {/* <XAxis
-              dataKey="month"
+            <CustomXAxis
+              dataKey="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
               tickFormatter={(value) => value.slice(0, 3)}
-            /> */}
+            />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
-            <Bar dataKey="desktop" fill="var(--color-desktop)" radius={8}>
+            <Bar dataKey="amount" fill="var(--color-amount)" radius={8}>
               <LabelList
                 position="top"
                 offset={12}
