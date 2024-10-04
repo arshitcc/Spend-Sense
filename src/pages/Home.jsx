@@ -7,6 +7,7 @@ import TransactionsDemo from '@/components/home/TransactionsDemo';
 import transactions from '@/appwrite/transactions';
 import { useQuery } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LandingPage from '@/components/LandingPage';
 
 
 function getCurrentMonthRange() {
@@ -79,6 +80,11 @@ function getPast7DaysRange() {
 function Home() {
 
   const authStatus = useAuthStore((state) => state.authStatus);
+
+  if(!authStatus){
+    return (<LandingPage/>);
+  }
+
   const myUser = useAuthStore((state) => state.user);
   const [selectedRange, setSelectedRange] = useState('Current Week');
 

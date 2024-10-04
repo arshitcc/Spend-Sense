@@ -8,6 +8,10 @@ import useAuthStore from '@/app/mystore'
 
 function Signup() {
 
+  const navigate = useNavigate();
+  const authStatus = useAuthStore((state) => state.authStatus);
+  if(authStatus) navigate('/');
+   
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
