@@ -66,7 +66,7 @@ export class AuthService {
 
     async createEmailVerify(){
         try {
-            return await this.account.createVerification('http://localhost:5173/signup');
+            return await this.account.createVerification('http://arshitcc-spend-sense.vercel.app/signup');
         } catch (error) {
             console.log("Appwrite service :: create verify Email :: error");
         }
